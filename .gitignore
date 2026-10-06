@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+.env.production
+test-results/
+playwright-report/
+scratch/
+_workspace/
+supabase/.temp/
+supabase/.branches/
+*.log
+dist-basepath-test/
+private/

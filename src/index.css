@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif;
+  --color-bg: #f7f8f5;
+  --color-surface: #ffffff;
+  --color-ink: #172b36;
+  --color-accent: #176b63;
+  --color-accent-strong: #0f4f49;
+  --color-accent-soft: #e6f1ef;
+  --color-muted: #5f6b72;
+  --color-line: #dde5e0;
+  --color-line-strong: #b9c7c0;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-warn: #7a4f00;
+  --color-warn-soft: #fdf3dc;
+  --radius-card: 16px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    background: var(--color-bg);
+  }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 키보드 포커스가 항상 보이도록 */
+  :focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  input[type='date'],
+  input[type='time'] {
+    min-height: 48px;
+  }
+  ::placeholder {
+    color: #8a959b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sr-only-focusable:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+dialog::backdrop {
+  background: rgb(23 43 54 / 0.45);
+}
