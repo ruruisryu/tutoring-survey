@@ -17,6 +17,7 @@ import { seoulDate } from '../lib/time';
 import type { PublicForm, SurveyDraft } from '../lib/types';
 import { Button, ErrorSummary, LiveMessage, LoadingBlock, Notice, useBeforeUnload, useDocumentTitle } from '../components/ui';
 import { ParentLayout } from './ParentLayout';
+import { PhotoUploadContext, shrinkImage, type PhotoUploader } from '../components/PhotoField';
 import { IntroView } from './IntroView';
 import { StatusView } from './StatusView';
 import { DoneView } from './DoneView';
@@ -46,6 +47,26 @@ export function SurveyPage() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
   const dirty = useRef(false);
+  const pendingUploads = useRef(0);
+  const [uploadWait, setUploadWait] = useState(false);
+
+  // 시험지 사진: pending/<제출 키>/<무작위 이름> 경로로 바로 올린다 (제출 키가 같아야 서버가 받아들인다)
+  const uploader = useMemo<PhotoUploader>(
+    () => ({
+      async upload(file) {
+        const { blob, type, ext } = await shrinkImage(file);
+        const path = `pending/${idempotencyKey.current}/${crypto.randomUUID()}.${ext}`;
+        await backend.storage.upload(path, blob, type);
+        dirty.current = true;
+        return path;
+      },
+      onPendingChange(delta) {
+        pendingUploads.current += delta;
+        if (pendingUploads.current === 0) setUploadWait(false);
+      },
+    }),
+    [backend],
+  );
 
   const load = useCallback(async () => {
     setLoadError(false);
@@ -137,7 +158,17 @@ export function SurveyPage() {
     setLive(stepTitle(steps[i]) + ' · ' + T.parent.stepOf(i + 1, steps.length));
   };
 
+  const blockedByUploads = () => {
+    if (pendingUploads.current > 0) {
+      setUploadWait(true);
+      setLive(T.parent.photos.waiting);
+      return true;
+    }
+    return false;
+  };
+
   const next = () => {
+    if (blockedByUploads()) return;
     const errs = validateStep(form, draft, step!, today);
     if (errs.length) return showErrors(errs);
     if (returnToReview) {
@@ -155,7 +186,7 @@ export function SurveyPage() {
   };
 
   const submit = async () => {
-    if (submitting) return;
+    if (submitting || blockedByUploads()) return;
     const all = validateAll(form, draft, today);
     if (all.length) {
       const target = stepOfPath(all[0].path, draft);
@@ -220,6 +251,7 @@ export function SurveyPage() {
 
   return (
     <ParentLayout settings={form.settings}>
+      <PhotoUploadContext.Provider value={uploader}>
       <LiveMessage message={live} />
       <form
         noValidate
@@ -276,7 +308,13 @@ export function SurveyPage() {
             </Button>
           )}
         </div>
+        {uploadWait && (
+          <Notice tone="warn" role="status" className="mt-4">
+            {T.parent.photos.waiting}
+          </Notice>
+        )}
       </form>
+      </PhotoUploadContext.Provider>
     </ParentLayout>
   );
 }

@@ -3,7 +3,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { ApiError } from '../errors';
 import type { AuthEvent, AuthSession, Backend } from '../types';
-import { callRpc, runSqlFiles, type Identity } from './engine';
+import { callRpc, queryAs, runSqlFiles, type Identity } from './engine';
 import shim from '../../../../supabase/local/shim.sql?raw';
 import seed from '../../../../supabase/local/seed.dev.sql?raw';
 
@@ -93,8 +93,33 @@ export async function createLocalBackend(): Promise<Backend> {
     },
   };
 
+  // 개발용: 파일 내용은 이 탭의 메모리에만 둔다 (새로고침하면 사라짐). 메타데이터는 PGlite 의 storage.objects.
+  const blobs = new Map<string, Blob>();
+  const currentIdentity = (): Identity => {
+    const s = readSession();
+    return s && !s.expired ? { role: 'authenticated', userId: s.userId, email: s.email } : { role: 'anon' };
+  };
+
   const backend: Backend = {
     kind: 'localdb',
+    storage: {
+      async upload(path, file) {
+        if (window.__dev?.failNext) {
+          window.__dev.failNext--;
+          throw new ApiError('network', { kind: 'network' });
+        }
+        await queryAs(db, currentIdentity(), `insert into storage.objects (bucket_id, name) values ('exam-photos', $1)`, [path]);
+        blobs.set(path, file);
+      },
+      async signedUrls(paths) {
+        const rows = await queryAs<{ name: string }>(db, currentIdentity(), `select name from storage.objects where bucket_id = 'exam-photos' and name = any($1::text[])`, [paths]);
+        return Object.fromEntries(rows.filter((r) => blobs.has(r.name)).map((r) => [r.name, URL.createObjectURL(blobs.get(r.name)!)]));
+      },
+      async remove(paths) {
+        await queryAs(db, currentIdentity(), `delete from storage.objects where bucket_id = 'exam-photos' and name = any($1::text[])`, [paths]);
+        paths.forEach((p) => blobs.delete(p));
+      },
+    },
     async rpc<T>(fn: string, args: Record<string, unknown> = {}) {
       const dev = window.__dev!;
       if (dev.delayMs) await new Promise((r) => setTimeout(r, dev.delayMs));

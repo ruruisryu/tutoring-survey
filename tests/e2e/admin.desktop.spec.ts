@@ -235,10 +235,10 @@ test.describe('관리자', () => {
     await page.getByLabel('질문 문구').fill('교과서 출판사 (바뀐 문구)');
     await page.getByRole('button', { name: '발행' }).click();
     await page.getByRole('dialog', { name: '발행' }).getByRole('button', { name: '발행' }).click();
-    await expect(page.getByText('v2 발행됨')).toBeVisible();
+    await expect(page.getByText('v3 발행됨')).toBeVisible();
     await page.getByRole('link', { name: '응답·상담' }).click();
     await page.getByRole('link', { name: '지우' }).click();
-    await expect(page.getByText('작성 당시 양식 v1').first()).toBeVisible();
+    await expect(page.getByText('작성 당시 양식 v2').first()).toBeVisible();
     await expect(page.getByText('학교 교과서 출판사').first()).toBeVisible();
     await expect(page.getByText('교과서 출판사 (바뀐 문구)')).toHaveCount(0);
   });

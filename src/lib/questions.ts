@@ -108,7 +108,25 @@ function answerError(q: Question, a: Answer): string | null {
       return typeof v === 'string' && isValidDateText(v) ? null : 'invalid';
     case 'time':
       return typeof v === 'string' && TIME_RE.test(v) ? null : 'invalid';
+    case 'photos':
+      if (!Array.isArray(v) || v.length === 0) return 'required';
+      if (v.length > MAX_PHOTOS) return 'too_many';
+      return v.every((x) => PHOTO_PATH_RE.test(x)) ? null : 'invalid';
   }
+}
+
+/** 질문 하나에 올릴 수 있는 사진 수 (서버 max_photos 와 같음) */
+export const MAX_PHOTOS = 5;
+export const PHOTO_PATH_RE = /^pending\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,120}$/;
+
+/** 답변들 가운데 사진 경로만 모은다 */
+export function photoPaths(questions: Question[], answers: Answers): string[] {
+  return questions
+    .filter((q) => q.type === 'photos')
+    .flatMap((q) => {
+      const a = answers[q.id];
+      return a?.status === 'answered' && Array.isArray(a.value) ? a.value : [];
+    });
 }
 
 /** 화면 검증. 서버와 같은 경로 형식(prefix.questionId)으로 오류를 돌려준다. */
@@ -206,6 +224,7 @@ export function answerToText(q: Question | undefined, a: Answer | undefined): st
   if (!a) return '';
   if (a.status === 'unknown') return q?.unknown_label || '모름';
   const v = a.value;
+  if (q?.type === 'photos' && Array.isArray(v)) return `사진 ${v.length}장`;
   if (Array.isArray(v)) return v.map((x) => q?.options?.find((o) => o.value === x)?.label ?? x).join(', ');
   if (typeof v === 'string' && q?.type === 'single') return q.options?.find((o) => o.value === v)?.label ?? v;
   return String(v);

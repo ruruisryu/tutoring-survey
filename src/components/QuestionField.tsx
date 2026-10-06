@@ -2,6 +2,7 @@ import { T } from '../copy/ko';
 import { maxLengthOf } from '../lib/questions';
 import type { Answer, Question } from '../lib/types';
 import { CharCount, Choice, Field, TextArea, TextInput } from './ui';
+import { PhotoField } from './PhotoField';
 
 interface Props {
   question: Question;
@@ -19,6 +20,10 @@ export function QuestionField({ question: q, answer, onChange, fieldId, error }:
   const value = answer?.status === 'answered' ? answer.value : undefined;
   const unknownLabel = q.unknown_label || T.common.unknown;
   const optionalTag = !q.required;
+
+  if (q.type === 'photos') {
+    return <PhotoField question={q} answer={answer} onChange={onChange} fieldId={fieldId} error={error} />;
+  }
 
   if (q.type === 'single' || q.type === 'multi') {
     const selected: string[] = isUnknown ? [UNKNOWN] : Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];

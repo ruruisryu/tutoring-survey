@@ -40,7 +40,7 @@ export async function fillCourseRequired(page: Page) {
   await page.getByLabel('지금 학교에서 배우는 단원이나 범위').fill('2단원');
   const difficulties = page.getByRole('group', { name: /어려워하는 부분/ });
   await difficulties.getByRole('checkbox').first().check();
-  await page.getByRole('group', { name: /가장 중요하게 생각하는 목표/ }).getByRole('radio').first().check();
+  await page.getByRole('group', { name: /중요하게 생각하는 목표/ }).getByRole('checkbox').first().check();
   for (const group of await page.getByRole('group', { name: /^입력 방식/ }).all()) {
     await group.getByRole('radio', { name: '미정' }).check();
   }

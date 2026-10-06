@@ -34,8 +34,27 @@ export function createSupabaseBackend(url: string, key: string): Backend {
     },
   });
 
+  const bucket = () => client.storage.from('exam-photos');
+
   return {
     kind: 'supabase',
+    storage: {
+      async upload(path, file, contentType) {
+        const { error } = await bucket().upload(path, file, { contentType, upsert: false });
+        if (error) throw new ApiError(/fetch|network/i.test(error.message) ? 'network' : 'upload_failed', { kind: /fetch|network/i.test(error.message) ? 'network' : 'server' });
+      },
+      async signedUrls(paths) {
+        if (paths.length === 0) return {};
+        const { data, error } = await bucket().createSignedUrls(paths, 60 * 60);
+        if (error) throw new ApiError('signed_url_failed');
+        return Object.fromEntries((data ?? []).filter((d) => d.signedUrl && d.path).map((d) => [d.path as string, d.signedUrl as string]));
+      },
+      async remove(paths) {
+        if (paths.length === 0) return;
+        const { error } = await bucket().remove(paths);
+        if (error) throw new ApiError('remove_failed');
+      },
+    },
     async rpc<T>(fn: string, args: Record<string, unknown> = {}) {
       let res;
       try {

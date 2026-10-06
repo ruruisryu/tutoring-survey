@@ -19,4 +19,13 @@ export interface Backend {
     verifyRecovery(tokenHash: string): Promise<void>;
     updatePassword(password: string): Promise<void>;
   };
+  /** 시험지 사진 저장소 (비공개 버킷 exam-photos) */
+  storage: {
+    /** 학부모: pending/<제출 키>/<이름> 경로에 올리기만 가능 */
+    upload(path: string, file: Blob, contentType: string): Promise<void>;
+    /** 관리자: 잠깐 쓸 수 있는 보기 주소 */
+    signedUrls(paths: string[]): Promise<Record<string, string>>;
+    /** 관리자: 삭제 */
+    remove(paths: string[]): Promise<void>;
+  };
 }

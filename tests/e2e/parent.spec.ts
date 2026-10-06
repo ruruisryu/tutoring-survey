@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectNoHorizontalOverflow, fillBasic, fillCourseRequired, loginAdmin, next, openSurvey, startSurvey, TOKENS } from './helpers';
+import { DEV_PASSWORD, expectNoHorizontalOverflow, fillBasic, fillCourseRequired, loginAdmin, next, openSurvey, startSurvey, TOKENS } from './helpers';
 
 test.describe('학부모 설문', () => {
   test('수학 단독 제출: 단계 이동, 포커스, 검토, 완료', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('학부모 설문', () => {
 
     await page.getByRole('checkbox', { name: '모름' }).first().check(); // 단원 모름
     await expect(page.getByLabel('지금 학교에서 배우는 단원이나 범위')).toBeDisabled();
-    await page.getByRole('group', { name: /가장 중요하게 생각하는 목표/ }).getByRole('radio', { name: '상담하면서 정하고 싶어요' }).check();
+    await page.getByRole('group', { name: /중요하게 생각하는 목표/ }).getByRole('checkbox', { name: '상담하면서 정하고 싶어요' }).check();
     for (const g of await page.getByRole('group', { name: /^입력 방식/ }).all()) await g.getByRole('radio', { name: '모름' }).check();
     await page.getByRole('group', { name: /숙제에 쓸 수 있는 시간/ }).getByRole('radio', { name: '상담 후 결정' }).check();
     await next(page);
@@ -157,6 +157,53 @@ test.describe('학부모 설문', () => {
     await loginAdmin(page);
     await page.getByRole('link', { name: '응답·상담' }).click();
     await expect(page.getByText('1건 중 1건')).toBeVisible();
+  });
+
+  test('시험지 사진 첨부와 목표 복수 선택', async ({ page }) => {
+    // 1x1 PNG
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await startSurvey(page, TOKENS.math);
+    await fillBasic(page);
+    await next(page);
+    await page.getByRole('checkbox', { name: '아직 정하지 않았어요' }).check();
+    await page.getByRole('checkbox', { name: '시간은 상담하면서 정하고 싶어요' }).check();
+    await next(page);
+    await fillCourseRequired(page);
+
+    // 사진 질문은 ‘최근 시험 점수’ 바로 아래
+    const photos = page.getByRole('group', { name: /이전 시험지 사진/ });
+    await expect(photos).toBeVisible();
+    await photos.locator('input[type=file]').setInputFiles([
+      { name: '시험지1.png', mimeType: 'image/png', buffer: png },
+      { name: '시험지2.png', mimeType: 'image/png', buffer: png },
+    ]);
+    await expect(photos.getByRole('img', { name: '올린 사진 2' })).toBeVisible();
+    await expect(photos.getByText('2장 / 최대 5장', { exact: false })).toBeVisible();
+    await photos.getByRole('button', { name: '올린 사진 2 빼기' }).click();
+    await expect(photos.getByText('1장 / 최대 5장', { exact: false })).toBeVisible();
+
+    // 목표는 여러 개 고를 수 있고, ‘상담하면서 정하고 싶어요’는 단독
+    const goal = page.getByRole('group', { name: /중요하게 생각하는 목표/ });
+    await goal.getByRole('checkbox', { name: '학교 시험 준비' }).check();
+    await goal.getByRole('checkbox', { name: '혼자 공부하는 습관 만들기' }).check();
+    await expect(goal.getByRole('checkbox', { name: '학교 수업을 잘 따라가기' })).toBeChecked();
+    await next(page);
+    await expect(page.getByText('사진 1장')).toBeVisible();
+    await expect(page.getByText('학교 수업을 잘 따라가기, 학교 시험 준비, 혼자 공부하는 습관 만들기')).toBeVisible();
+    await page.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }).check();
+    await page.getByRole('button', { name: '상담 내용 보내기' }).click();
+    await expect(page.getByRole('heading', { name: '접수되었습니다' })).toBeVisible();
+
+    // 관리자 화면에서 사진이 보인다 (같은 탭: 개발용 저장소는 탭 메모리에 있음)
+    await page.evaluate(() => {
+      location.hash = '#/admin/login';
+    });
+    await page.getByLabel('이메일').fill('admin@dev.localhost');
+    await page.getByLabel('비밀번호').fill(DEV_PASSWORD);
+    await page.getByRole('button', { name: '로그인' }).click();
+    await page.getByRole('link', { name: '응답·상담' }).click();
+    await page.getByRole('link', { name: '민준' }).first().click();
+    await expect(page.getByRole('img', { name: '시험지 사진 1' }).first()).toBeVisible();
   });
 
   test('접수 마감·비활성·잘못된 링크 안내', async ({ page }) => {

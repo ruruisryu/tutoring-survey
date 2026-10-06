@@ -74,7 +74,21 @@ export const T = {
     teacherTitle: (name: string) => (name ? `${name} 선생님` : '선생님 소개'),
     policyTitle: '수업료·환불 안내',
     siblingNote: '한 번에 학생 한 명의 내용을 작성합니다. 형제자매는 각각 작성해주세요.',
-    photoNote: '교과서나 시험지 사진이 필요하면 상담하면서 따로 부탁드리겠습니다.',
+    photoNote: '시험지 사진은 과목별 학습 정보 단계에서 올릴 수 있습니다. 교과서 사진이 필요하면 상담하면서 따로 부탁드리겠습니다.',
+    photos: {
+      add: '사진 선택',
+      uploading: '올리는 중',
+      done: '올림',
+      failedShort: '실패',
+      uploaded: (name: string) => `${name} 사진을 올렸습니다.`,
+      failed: (name: string) => `${name} 사진을 올리지 못했습니다. ‘다시 시도’를 눌러주세요.`,
+      limit: (n: number) => `사진은 최대 ${n}장까지 올릴 수 있어 일부만 올렸습니다.`,
+      count: (n: number, max: number) => `${n}장 / 최대 ${max}장 · 사진은 선생님만 볼 수 있습니다.`,
+      alt: (n: number) => `올린 사진 ${n}`,
+      removeLabel: (n: number) => `올린 사진 ${n} 빼기`,
+      previewOnly: '미리보기에서는 사진을 올릴 수 없습니다.',
+      waiting: '사진을 올리는 중입니다. 다 올라간 뒤 다시 눌러주세요.',
+    },
 
     status: {
       invalid: { title: '링크를 확인할 수 없습니다', body: '주소가 정확한지 확인해주세요. 받으신 링크를 다시 눌러도 열리지 않으면 선생님께 새 링크를 요청해주세요.' },
@@ -189,7 +203,7 @@ export const T = {
       privacyTitle: '개인정보 수집·이용 안내',
       privacyItems: '수집 항목',
       privacyItemsText:
-        '학부모 성함, 휴대전화 번호, 학생 이름(또는 별칭), 학교급·학년, 학교 이름(선택), 수업 희망 일정, 학습 상황과 시험 정보, 요청사항',
+        '학부모 성함, 휴대전화 번호, 학생 이름(또는 별칭), 학교급·학년, 학교 이름(선택), 수업 희망 일정, 학습 상황과 시험 정보, 시험지 사진(선택), 요청사항',
       privacyPurpose: '이용 목적',
       privacyRetention: '보관 기간',
       privacyDeletion: '삭제 요청 방법',
@@ -241,6 +255,7 @@ export const T = {
     invalid_option: '선택지를 다시 골라주세요.',
     exclusive_option: '‘잘 모르겠음’은 다른 항목과 함께 고를 수 없습니다.',
     out_of_range: '입력할 수 있는 범위를 벗어났습니다.',
+    too_many: '사진은 최대 5장까지 올릴 수 있습니다.',
     conflict_undecided: '‘미정’과 구체적인 값을 함께 고를 수 없습니다.',
     startDateRequired: '희망 날짜를 고르거나 ‘아직 정하지 않았어요’를 선택해주세요.',
     startDateRange: '오늘부터 1년 안의 날짜를 골라주세요.',
@@ -635,6 +650,7 @@ export const T = {
           number: '숫자',
           date: '날짜',
           time: '시각',
+          photos: '사진 첨부',
         } as Record<string, string>,
         roles: {
           '': '기타 응답',

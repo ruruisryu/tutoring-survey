@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { T, schoolGradeLabel } from '../copy/ko';
 import { isApiError } from '../lib/backend/errors';
 import { formatHomeworkTotal, homeworkLabel, homeworkTotal } from '../lib/homework';
 import { formatPhone } from '../lib/phone';
-import { answerToText, applicableQuestions, visibilityMap } from '../lib/questions';
+import { answerToText, applicableQuestions, photoPaths, visibilityMap } from '../lib/questions';
+import { useBackend } from '../app/BackendContext';
 import { formatDateKo, formatDateTimeKo, formatSlot, sortSlots, WEEKDAY_LABELS, WEEKDAY_ORDER } from '../lib/time';
 import { gradeKeyOf } from '../lib/survey';
 import { commonUnknowns, courseUnknowns } from '../lib/unknowns';
-import type { Consultation, ConsultStatus, DetailCourse, Question, QuestionRole, Slot, SubmissionDetail } from '../lib/types';
+import type { Answer, Consultation, ConsultStatus, DetailCourse, Question, QuestionRole, Slot, SubmissionDetail } from '../lib/types';
 import {
   Button,
   Card,
@@ -236,7 +237,13 @@ function AnswerList({ course, questions, empty }: { course: DetailCourse; questi
         <div key={q.id}>
           <dt className="text-[14px] text-muted">{q.label}</dt>
           <dd className="m-0 whitespace-pre-line">
-            {course.answers[q.id]?.status === 'unknown' ? <Tag tone="warn">{q.unknown_label || '모름'}</Tag> : answerToText(q, course.answers[q.id])}
+            {course.answers[q.id]?.status === 'unknown' ? (
+              <Tag tone="warn">{q.unknown_label || '모름'}</Tag>
+            ) : q.type === 'photos' ? (
+              <PhotoThumbs answer={course.answers[q.id]} />
+            ) : (
+              answerToText(q, course.answers[q.id])
+            )}
           </dd>
         </div>
       ))}
@@ -372,7 +379,9 @@ function CoursePanel({
               .map((q) => (
                 <div key={q.id} className="grid gap-1 py-2 sm:grid-cols-[220px_1fr] sm:gap-4">
                   <dt className="text-[14px] text-muted">{q.label}</dt>
-                  <dd className="m-0 whitespace-pre-line">{c.answers[q.id] ? answerToText(q, c.answers[q.id]) : <span className="text-muted">답하지 않음</span>}</dd>
+                  <dd className="m-0 whitespace-pre-line">
+                    {!c.answers[q.id] ? <span className="text-muted">답하지 않음</span> : q.type === 'photos' ? <PhotoThumbs answer={c.answers[q.id]} /> : answerToText(q, c.answers[q.id])}
+                  </dd>
                 </div>
               ))}
           </dl>
@@ -590,6 +599,7 @@ function TeacherRecord({ submissionId, course: c, onDirty, onSaved }: { submissi
 function DeleteSection({ detail }: { detail: SubmissionDetail }) {
   const D = T.admin.detail;
   const { call } = useAdminData();
+  const backend = useBackend();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState('');
@@ -621,6 +631,12 @@ function DeleteSection({ detail }: { detail: SubmissionDetail }) {
                 setBusy(true);
                 setError(null);
                 try {
+                  // 시험지 사진 파일을 먼저 지운 뒤 응답을 지운다 (파일이 남지 않게)
+                  const paths = [
+                    ...photoPaths(detail.common.questions, detail.common.answers),
+                    ...detail.courses.flatMap((x) => photoPaths(x.questions, x.answers)),
+                  ];
+                  if (paths.length) await backend.storage.remove(paths);
                   await call('admin_delete_submission', { p_id: detail.id, p_confirm_student_name: confirm.trim() });
                   setLive(D.deleted);
                   navigate('/admin/responses', { replace: true });
@@ -653,5 +669,43 @@ function DeleteSection({ detail }: { detail: SubmissionDetail }) {
         </div>
       </Dialog>
     </section>
+  );
+}
+
+/** 시험지 사진: 관리자만 볼 수 있는 잠깐 쓰는 주소로 보여준다 */
+function PhotoThumbs({ answer }: { answer: Answer | undefined }) {
+  const backend = useBackend();
+  const paths = useMemo(() => (answer?.status === 'answered' && Array.isArray(answer.value) ? answer.value : []), [answer]);
+  const [urls, setUrls] = useState<Record<string, string> | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    backend.storage.signedUrls(paths).then(
+      (u) => alive && setUrls(u),
+      () => alive && setFailed(true),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [backend, paths]);
+  if (paths.length === 0) return null;
+  if (failed) return <span className="text-muted">사진 {paths.length}장 (불러오지 못했습니다)</span>;
+  return (
+    <ul className="mt-1 flex flex-wrap gap-2">
+      {paths.map((p, i) => (
+        <li key={p}>
+          {urls?.[p] ? (
+            <a href={urls[p]} target="_blank" rel="noreferrer noopener" className="block">
+              <img src={urls[p]} alt={`시험지 사진 ${i + 1}`} className="size-24 rounded-lg border border-line object-cover" />
+              <span className="sr-only">새 창에서 크게 보기</span>
+            </a>
+          ) : (
+            <span className="flex size-24 items-center justify-center rounded-lg border border-line text-[12px] text-muted">
+              {urls ? '파일 없음' : '불러오는 중'}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

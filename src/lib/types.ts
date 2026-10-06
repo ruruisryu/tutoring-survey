@@ -1,6 +1,6 @@
 // 서버 함수(supabase/migrations)가 주고받는 JSON 형태
 
-export type QuestionType = 'short_text' | 'long_text' | 'single' | 'multi' | 'number' | 'date' | 'time';
+export type QuestionType = 'short_text' | 'long_text' | 'single' | 'multi' | 'number' | 'date' | 'time' | 'photos';
 export type QuestionRole = 'goal' | 'textbook' | 'progress' | 'difficulty' | 'score' | 'confidence' | 'note' | 'other';
 
 export interface QuestionOption {

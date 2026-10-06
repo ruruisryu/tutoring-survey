@@ -11,7 +11,7 @@ import { QuestionField } from '../components/QuestionField';
 import { adminErrorText, useAdminData } from './AdminData';
 import { UnsavedGuard } from './UnsavedGuard';
 
-const TYPES: QuestionType[] = ['short_text', 'long_text', 'single', 'multi', 'number', 'date', 'time'];
+const TYPES: QuestionType[] = ['short_text', 'long_text', 'single', 'multi', 'number', 'date', 'time', 'photos'];
 const ROLES: (QuestionRole | '')[] = ['', 'goal', 'textbook', 'progress', 'difficulty', 'score', 'confidence', 'note'];
 
 export function TemplateEditorPage() {
