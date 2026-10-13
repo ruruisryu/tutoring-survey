@@ -7,6 +7,7 @@ export const TOKENS = {
   multi: 'devmultiplecourses000000000000000000000',
   closedCourse: 'devclosedcourse0000000000000000000000000',
   inactive: 'devinactivelink0000000000000000000000000',
+  allSubjects: 'devallsubjects00000000000000000000000000',
 };
 
 // .env.localdb 의 개발 전용 비밀번호 (실제 계정 아님)

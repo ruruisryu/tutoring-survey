@@ -12,7 +12,7 @@ export interface ConditionRow {
 
 export function targetText(c: Pick<CourseConditions, 'school_level' | 'grades'>): string {
   const level = T.labels.schoolLevel[c.school_level] ?? '';
-  if (c.school_level === 'any') return level;
+  if (c.school_level === 'any') return '초·중·고 모든 학년';
   if (c.grades.length === 0) return `${level} 전 학년`;
   const g = [...c.grades].sort((a, b) => a - b);
   // 1·2·3학년처럼 이어지는 학년은 1~3학년으로 줄여 쓴다

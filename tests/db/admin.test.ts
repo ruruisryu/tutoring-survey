@@ -313,6 +313,6 @@ describe('과목·양식 확장과 버전', () => {
     );
     expect(counts[0]).toEqual({ s: 0, c: 0, i: 0, confirmed: false, op: '' });
     const subjects = await clean.root<{ name: string }>('select name from subjects order by sort_order');
-    expect(subjects.map((s) => s.name)).toEqual(['수학', '과학', '통합과학']);
+    expect(subjects.map((s) => s.name)).toEqual(['전 과목', '수학', '과학', '통합과학']);
   });
 });

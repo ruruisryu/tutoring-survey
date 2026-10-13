@@ -23,6 +23,8 @@ export function toCsv(rows: unknown[][]): string {
 }
 
 const STANDARD_COLUMNS: { id: string; header: string }[] = [
+  { id: 'lesson_subjects', header: '수업 희망 과목' },
+  { id: 'lesson_subjects_other', header: '수업 희망 과목(기타)' },
   { id: 'textbook_publisher', header: '교과서 출판사' },
   { id: 'textbook_author', header: '교과서 대표 저자' },
   { id: 'current_unit', header: '현재 단원·범위' },

@@ -57,9 +57,9 @@ test.describe('관리자', () => {
     await expect(page.getByRole('link', { name: '민준' })).toBeVisible();
     await expect(page.getByRole('cell', { name: '010-****-5678' })).toBeVisible();
     // 필터: 과목·확인 필요·요일
-    await page.getByLabel('과목').selectOption({ label: '통합과학' });
+    await page.getByLabel(/^과목/).selectOption({ label: '통합과학' });
     await expect(page.getByText('조건에 맞는 상담이 없습니다.', { exact: false })).toBeVisible();
-    await page.getByLabel('과목').selectOption({ label: '과학' });
+    await page.getByLabel(/^과목/).selectOption({ label: '과학' });
     await expect(page.getByRole('link', { name: '민준' })).toBeVisible();
     await page.getByRole('button', { name: '필터 초기화' }).click();
     await page.getByLabel('희망 요일').selectOption({ label: '수요일' });

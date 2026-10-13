@@ -206,6 +206,46 @@ test.describe('학부모 설문', () => {
     await expect(page.getByRole('img', { name: '시험지 사진 1' }).first()).toBeVisible();
   });
 
+  test('전 과목 공용 양식: 초등학생, 과목 복수 선택과 기타', async ({ page }) => {
+    await openSurvey(page, TOKENS.allSubjects);
+    await expect(page.getByText('초·중·고 모든 학년').first()).toBeVisible();
+    await page.getByRole('button', { name: '학습 상담 작성하기' }).first().click();
+    await page.getByLabel('학부모 성함').fill('김보호');
+    await page.getByLabel('연락 가능한 휴대전화 번호').fill('010 1234 5678');
+    await page.getByLabel('학생 이름').fill('서윤');
+    await page.getByLabel('학교급·학년').selectOption('elementary-4');
+    await next(page);
+    await page.getByRole('checkbox', { name: '아직 정하지 않았어요' }).check();
+    await page.getByRole('checkbox', { name: '시간은 상담하면서 정하고 싶어요' }).check();
+    for (const name of [/수업 방식/, /수업 형태/]) {
+      const g = page.getByRole('group', { name });
+      if (await g.count()) await g.getByRole('radio', { name: '상관없음' }).check();
+    }
+    await next(page);
+
+    // 과목별 질문(출판사 목록·학년별 단원)은 없고, 수업받고 싶은 과목을 묻는다
+    await expect(page.getByRole('radio', { name: '비상교육' })).toHaveCount(0);
+    const subjects = page.getByRole('group', { name: /수업받고 싶은 과목/ });
+    await subjects.getByRole('checkbox', { name: '수학' }).check();
+    await subjects.getByRole('checkbox', { name: '영어' }).check();
+    await subjects.getByRole('checkbox', { name: '기타' }).check();
+    await expect(page.getByText('‘기타’에 해당하는 과목').first()).toBeVisible();
+    await page.getByLabel('‘기타’에 해당하는 과목').fill('독서 논술');
+    await page.getByLabel('지금 학교에서 배우는 단원이나 범위').fill('수학 분수의 나눗셈, 영어 3과');
+    await page.getByRole('group', { name: /어려워하는 부분/ }).getByRole('checkbox', { name: '글이나 문제를 읽고 이해하기' }).check();
+    await page.getByRole('group', { name: /중요하게 생각하는 목표/ }).getByRole('checkbox', { name: '학교 시험·평가 준비' }).check();
+    for (const group of await page.getByRole('group', { name: /^입력 방식/ }).all()) {
+      await group.getByRole('radio', { name: '해당 없음' }).check();
+    }
+    await page.getByRole('group', { name: /숙제에 쓸 수 있는 시간/ }).getByRole('radio', { name: '주 30~60분' }).check();
+    await next(page);
+    await expect(page.getByText('수학, 영어, 기타')).toBeVisible();
+    await expect(page.getByText('독서 논술')).toBeVisible();
+    await page.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }).check();
+    await page.getByRole('button', { name: '상담 내용 보내기' }).click();
+    await expect(page.getByRole('heading', { name: '접수되었습니다' })).toBeVisible();
+  });
+
   test('접수 마감·비활성·잘못된 링크 안내', async ({ page }) => {
     await page.goto(`/#/s/${TOKENS.closedCourse}`);
     await expect(page.getByRole('heading', { name: '지금은 접수하지 않습니다' })).toBeVisible({ timeout: 30_000 });

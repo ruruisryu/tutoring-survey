@@ -32,11 +32,13 @@ declare
   math uuid;
   sci uuid;
   isci uuid;
+  allsub uuid;
   c_math uuid := '00000000-0000-4000-8000-00000000c001';
   c_sci uuid := '00000000-0000-4000-8000-00000000c002';
   c_isci uuid := '00000000-0000-4000-8000-00000000c003';
   c_closed uuid := '00000000-0000-4000-8000-00000000c004';
   c_exam uuid := '00000000-0000-4000-8000-00000000c005';
+  c_all uuid := '00000000-0000-4000-8000-00000000c006';
   i_math uuid := '00000000-0000-4000-8000-00000000e001';
   i_sci uuid := '00000000-0000-4000-8000-00000000e002';
   i_isci uuid := '00000000-0000-4000-8000-00000000e003';
@@ -44,11 +46,13 @@ declare
   i_closed uuid := '00000000-0000-4000-8000-00000000e005';
   i_inactive uuid := '00000000-0000-4000-8000-00000000e006';
   i_exam uuid := '00000000-0000-4000-8000-00000000e007';
+  i_all uuid := '00000000-0000-4000-8000-00000000e008';
   online_note text := '1:1 화상 수업입니다.';
 begin
   select id into math from public.subjects where name = '수학';
   select id into sci from public.subjects where name = '과학';
   select id into isci from public.subjects where name = '통합과학';
+  select id into allsub from public.subjects where name = '전 과목';
 
   insert into public.courses (
     id, subject_id, template_id, name, school_level, grades, scope_text, mode, group_type, sessions_per_week,
@@ -77,7 +81,12 @@ begin
     (c_closed, math, (select default_template_id from public.subjects where id = math),
       '중등수학 정규 클래스 (접수 마감)', 'middle', '{1,2,3}', '', 'online', 'individual', 1,
       120, '{2}', '{}', '19:00', '', null, '', '{weekdays,start_time,minutes,sessions}', '{}',
-      '', 50);
+      '', 50),
+    -- 과목·학년 무관 상담: 공용 양식 사용, 조건은 모두 협의
+    (c_all, allsub, (select default_template_id from public.subjects where id = allsub),
+      '전 과목 학습 상담', 'any', '{}', '초등학교~고등학교, 과목 협의', 'negotiable', 'negotiable', null,
+      null, '{}', '{}', null, '', null, '', '{}', '{}',
+      '(개발용 예시) 과목과 수업 방식은 상담하면서 정합니다.', 5);
 
   update public.courses set status = 'closed' where id = c_closed;
 
@@ -87,7 +96,8 @@ begin
     (i_isci, 'devintegratedscience00000000000000000000', '개발용 · 통합과학 정규', false),
     (i_multi, 'devmultiplecourses000000000000000000000', '개발용 · 여러 수업 선택', true),
     (i_closed, 'devclosedcourse0000000000000000000000000', '개발용 · 접수 마감 수업', false),
-    (i_exam, 'devexamprepclass000000000000000000000000', '개발용 · 내신 집중 대비', false);
+    (i_exam, 'devexamprepclass000000000000000000000000', '개발용 · 내신 집중 대비', false),
+    (i_all, 'devallsubjects00000000000000000000000000', '개발용 · 전 과목 상담', false);
   insert into public.invitations (id, token, label, allow_multiple, is_active) values
     (i_inactive, 'devinactivelink0000000000000000000000000', '개발용 · 비활성 링크', false, false);
 
@@ -100,6 +110,7 @@ begin
     (i_multi, c_isci, 3),
     (i_multi, c_exam, 4),
     (i_exam, c_exam, 1),
+    (i_all, c_all, 1),
     (i_closed, c_closed, 1),
     (i_inactive, c_math, 1);
 end $$;
